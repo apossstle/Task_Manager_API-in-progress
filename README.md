@@ -1,4 +1,4 @@
-# Task Manager API (skeleton)
+# Task Manager API 
 
 Backend-проект для практики SQL, ORM и токен-авторизации.
 
