@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
 from datetime import datetime
 
@@ -7,6 +7,16 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+    @validator("password")
+    def password_max_bytes(cls, v: str) -> str:
+        try:
+            b = v.encode("utf-8")
+        except Exception:
+            raise ValueError("Неверный формат пароля")
+        if len(b) > 72:
+            raise ValueError("Пароль слишком длинный: максимум 72 байта (ограничение bcrypt).")
+        return v
 
 class UserOut(UserBase):
     id: int
@@ -17,9 +27,11 @@ class UserOut(UserBase):
     class Config:
         orm_mode = True
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class TaskBase(BaseModel):
     title: str
