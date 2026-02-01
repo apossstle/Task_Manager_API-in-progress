@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
 from passlib.context import CryptContext
+from fastapi import HTTPException
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -8,6 +9,10 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
 def create_user(db: Session, user_in: schemas.UserCreate):
+    pw_bytes = user_in.password.encode('utf-8') if isinstance(user_in.password, str) else bytes(user_in.password)
+    if len(pw_bytes) > 72:
+        raise HTTPException(status_code=400,
+                            detail="Password too long: bcrypt supports up to 72 bytes. Use a shorter password.")
     hashed = pwd_context.hash(user_in.password)
     db_user = models.User(email=user_in.email, hashed_password=hashed)
     db.add(db_user)
