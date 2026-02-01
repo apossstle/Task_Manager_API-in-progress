@@ -1,17 +1,26 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from pathlib import Path
 from sqlalchemy.orm import Session
 import uvicorn
 
 from . import models, schemas, crud, database, auth
 
-app = FastAPI(title="Task Manager API")
+app = FastAPI()
 
 models.Base.metadata.create_all(bind=database.engine)
 
-@app.get("/ping")
-def ping():
-    return {"msg": "pong"}
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+@app.get("/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse(
+        "register.html",
+        {"request": request}
+    )
 
 @app.post("/users/register", response_model=schemas.UserOut)
 def register(user_in: schemas.UserCreate, db: Session = Depends(database.get_db)):
