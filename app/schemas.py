@@ -11,6 +11,9 @@ class UserCreate(UserBase):
 class UserOut(UserBase):
     id: int
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
     class Config:
         orm_mode = True
 
@@ -36,5 +39,8 @@ class TaskOut(TaskBase):
     id: int
     status: str
     owner_id: int
+
+    model_config = {"from_attributes": True}
+
     class Config:
         orm_mode = True
