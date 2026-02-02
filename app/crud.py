@@ -11,24 +11,12 @@ def get_user_by_email(db: Session, email: str):
 
 def create_user(db: Session, user_in: schemas.UserCreate):
     if not isinstance(user_in.password, str):
-        raise HTTPException(status_code=400, detail="Неверный формат пароля")
-
-    pw_bytes = user_in.password.encode('utf-8')
-    if len(pw_bytes) > 72:
-        raise HTTPException(
-            status_code=400,
-            detail="Пароль слишком длинный: bcrypt поддерживает до 72 байт (используйте более короткий пароль)."
-        )
+        raise HTTPException(status_code=400, detail="Invalid password format")
 
     try:
-        hashed = pwd_context.hash(user_in.password)
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail="Пароль слишком длинный для bcrypt. Используйте более короткий пароль."
-        )
+        hashed = hashlib.sha256(user_in.password.encode("utf-8")).hexdigest()
     except Exception:
-        raise HTTPException(status_code=500, detail="Ошибка при хешировании пароля")
+        raise HTTPException(status_code=500, detail="Password hashing failed")
 
     db_user = models.User(email=user_in.email, hashed_password=hashed)
     db.add(db_user)
