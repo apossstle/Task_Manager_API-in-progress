@@ -1,4 +1,4 @@
-# 🗂️ Task Manager API v2
+# 🗂️ Task Manager API
 
 REST API для управления задачами с JWT-авторизацией, SQLite и полным фронтендом на TypeScript.
 
