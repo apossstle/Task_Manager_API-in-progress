@@ -2,7 +2,7 @@
 
 REST API для управления задачами с JWT-авторизацией, SQLite и полным фронтендом на TypeScript.
 
-## 🚀 Быстрый старт
+## Быстрый старт
 
 ```bash
 # Backend
@@ -15,7 +15,7 @@ uvicorn app.main:app --reload
 # API документация: http://127.0.0.1:8000/docs
 ```
 
-## 🧪 Тесты
+## Тесты
 
 ```bash
 pytest -v                              # все тесты
@@ -23,7 +23,7 @@ pytest --cov=app --cov-report=term     # с покрытием
 pytest --html=report.html              # HTML-отчёт
 ```
 
-## 📁 Структура
+## Структура
 
 ```
 Task-Manager-API/
@@ -54,7 +54,7 @@ Task-Manager-API/
 └── requirements.txt
 ```
 
-## 📋 API
+## API
 
 | Метод | URL | Описание |
 |-------|-----|----------|
