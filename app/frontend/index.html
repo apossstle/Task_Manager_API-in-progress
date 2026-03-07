@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TASK MANAGER — ВХОД</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --black: #0a0a0a; --white: #f5f5f0; --gray: #707070; --light-gray: #c8c8c0; }
+
+    body {
+      font-family: 'Courier Prime', monospace;
+      background: var(--white); color: var(--black);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+    }
+    .scanline {
+      position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+      background: rgba(0,0,0,0.07); animation: scan 10s linear infinite;
+      pointer-events: none; z-index: 999;
+    }
+    @keyframes scan { from { transform: translateY(-10px); } to { transform: translateY(100vh); } }
+
+    .page-wrap {
+      width: 100%; max-width: 460px; position: relative; z-index: 1;
+      animation: fadeUp 0.45s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+
+    .header {
+      background: var(--black); color: var(--white);
+      padding: 30px 28px 24px; border: 4px solid var(--black);
+      margin-bottom: -4px; text-align: center; position: relative;
+    }
+    .corner { position: absolute; width: 8px; height: 8px; background: var(--white); }
+    .corner.tl{top:6px;left:6px;} .corner.tr{top:6px;right:6px;}
+    .corner.bl{bottom:6px;left:6px;} .corner.br{bottom:6px;right:6px;}
+    .logo { font-size: 2.2rem; font-weight: 700; letter-spacing: 6px; }
+    .tagline { font-size: 0.72rem; letter-spacing: 3px; opacity: 0.5; margin-top: 6px; }
+
+    .card { border: 4px solid var(--black); background: var(--white); padding: 32px; }
+    .card-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 4px;
+      text-transform: uppercase; margin-bottom: 26px;
+      padding-bottom: 14px; border-bottom: 2px solid var(--black); color: var(--gray);
+    }
+    .hidden { display: none !important; }
+
+    .field { margin-bottom: 20px; }
+    .label { display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 8px; }
+
+    input[type="email"], input[type="password"], input[type="text"] {
+      width: 100%; padding: 11px 14px; border: 3px solid var(--black);
+      background: var(--white); font-family: 'Courier Prime', monospace;
+      font-size: 0.95rem; font-weight: 700; outline: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    input:focus { background: var(--black); color: var(--white); }
+    input::placeholder { color: var(--light-gray); font-weight: 400; }
+
+    .btn {
+      width: 100%; padding: 13px; background: var(--black); color: var(--white);
+      border: 3px solid var(--black); font-family: 'Courier Prime', monospace;
+      font-size: 0.9rem; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn:hover { background: var(--white); color: var(--black); }
+    .btn:active { transform: scale(0.985); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .status-msg {
+      display: none; margin-top: 14px; padding: 11px 14px;
+      border: 2px solid var(--black); font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; text-align: center;
+    }
+    .status-msg.show { display: block; }
+    .status-msg.success { background: var(--black); color: var(--white); }
+    .status-msg.error {
+      background: repeating-linear-gradient(45deg,var(--white) 0,var(--white) 8px,#e8e8e0 8px,#e8e8e0 16px);
+    }
+
+    .toggle { margin-top: 22px; text-align: center; font-size: 0.76rem; letter-spacing: 1.5px; color: var(--gray); }
+    .toggle a {
+      color: var(--black); font-weight: 700; text-transform: uppercase;
+      cursor: pointer; border-bottom: 2px solid var(--black); text-decoration: none;
+      transition: background 0.15s, color 0.15s, padding 0.15s;
+    }
+    .toggle a:hover { background: var(--black); color: var(--white); padding: 1px 4px; }
+
+    .footer { text-align: center; margin-top: 18px; font-size: 0.68rem; letter-spacing: 2px; color: var(--light-gray); text-transform: uppercase; }
+
+    .loading-dots::after {
+      content: '.'; animation: dots 1.2s steps(3,end) infinite;
+    }
+    @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%,100%{content:'...'} }
+  </style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<div class="page-wrap">
+  <header class="header">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="logo">TASK MANAGER</div>
+    <div class="tagline">СИСТЕМА УПРАВЛЕНИЯ ЗАДАЧАМИ</div>
+  </header>
+
+  <div id="login-section" class="card">
+    <div class="card-title">// АВТОРИЗАЦИЯ</div>
+    <div class="field">
+      <label class="label" for="login-email">Email</label>
+      <input id="login-email" type="email" placeholder="user@example.com">
+    </div>
+    <div class="field">
+      <label class="label" for="login-pass">Пароль</label>
+      <input id="login-pass" type="password" placeholder="••••••••">
+    </div>
+    <button id="btn-login" class="btn">ВОЙТИ</button>
+    <div id="login-status" class="status-msg"></div>
+    <div class="toggle">НЕТ АККАУНТА? <a id="link-to-register">РЕГИСТРАЦИЯ →</a></div>
+  </div>
+
+  <div id="register-section" class="card hidden">
+    <div class="card-title">// РЕГИСТРАЦИЯ</div>
+    <div class="field">
+      <label class="label" for="reg-email">Email</label>
+      <input id="reg-email" type="email" placeholder="user@example.com">
+    </div>
+    <div class="field">
+      <label class="label" for="reg-pass">Пароль</label>
+      <input id="reg-pass" type="password" placeholder="минимум 6 символов">
+    </div>
+    <button id="btn-register" class="btn">СОЗДАТЬ АККАУНТ</button>
+    <div id="reg-status" class="status-msg"></div>
+    <div class="toggle">ЕСТЬ АККАУНТ? <a id="link-to-login">← ВОЙТИ</a></div>
+  </div>
+
+  <div class="footer">© 2025 TASK MANAGER</div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+
+function el(id) { return document.getElementById(id); }
+
+function showStatus(id, msg, isError) {
+  const s = el(id);
+  s.textContent = msg;
+  s.className = 'status-msg show ' + (isError ? 'error' : 'success');
+  setTimeout(() => s.classList.remove('show'), 3000);
+}
+
+function setLoading(btn, loading) {
+  if (loading) {
+    btn.dataset.orig = btn.textContent;
+    btn.innerHTML = 'ЗАГРУЗКА<span class="loading-dots"></span>';
+    btn.disabled = true;
+  } else {
+    btn.textContent = btn.dataset.orig;
+    btn.disabled = false;
+  }
+}
+
+function toggleAuth() {
+  el('login-section').classList.toggle('hidden');
+  el('register-section').classList.toggle('hidden');
+}
+
+async function login() {
+  const email = el('login-email').value.trim();
+  const password = el('login-pass').value;
+  if (!email || !password) { showStatus('login-status', '[ОШИБКА] ЗАПОЛНИТЕ ВСЕ ПОЛЯ', true); return; }
+  const btn = el('btn-login');
+  setLoading(btn, true);
+  try {
+    const fd = new FormData();
+    fd.append('username', email);
+    fd.append('password', password);
+    const res = await fetch(API + '/users/login', { method: 'POST', body: fd });
+    if (res.ok) {
+      const data = await res.json();
+      localStorage.setItem('token', data.access_token);
+      window.location.href = '/tasks-page';
+    } else {
+      const err = await res.json();
+      showStatus('login-status', '[ОШИБКА] ' + (err.detail || 'НЕВЕРНЫЕ ДАННЫЕ').toUpperCase(), true);
+    }
+  } catch (e) {
+    showStatus('login-status', '[ОШИБКА] СЕРВЕР НЕДОСТУПЕН', true);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function register() {
+  const email = el('reg-email').value.trim();
+  const password = el('reg-pass').value;
+  if (!email || !password) { showStatus('reg-status', '[ОШИБКА] ЗАПОЛНИТЕ ВСЕ ПОЛЯ', true); return; }
+  const btn = el('btn-register');
+  setLoading(btn, true);
+  try {
+    const res = await fetch(API + '/users/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (res.ok) {
+      showStatus('reg-status', '[УСПЕШНО] АККАУНТ СОЗДАН');
+      el('reg-email').value = '';
+      el('reg-pass').value = '';
+      setTimeout(toggleAuth, 1800);
+    } else {
+      const err = await res.json();
+      showStatus('reg-status', '[ОШИБКА] ' + (err.detail || 'ЧТО-ТО ПОШЛО НЕ ТАК').toUpperCase(), true);
+    }
+  } catch (e) {
+    showStatus('reg-status', '[ОШИБКА] СЕРВЕР НЕДОСТУПЕН', true);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// Если уже залогинен — редирект
+if (localStorage.getItem('token')) window.location.href = '/tasks-page';
+
+el('btn-login').addEventListener('click', login);
+el('btn-register').addEventListener('click', register);
+el('link-to-register').addEventListener('click', toggleAuth);
+el('link-to-login').addEventListener('click', toggleAuth);
+['login-email','login-pass'].forEach(id => el(id).addEventListener('keypress', e => { if(e.key==='Enter') login(); }));
+['reg-email','reg-pass'].forEach(id => el(id).addEventListener('keypress', e => { if(e.key==='Enter') register(); }));
+</script>
+</body>
+</html>

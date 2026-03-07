@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TASK MANAGER — ЗАДАЧИ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --black: #0a0a0a; --white: #f5f5f0; --gray: #707070; --light-gray: #c8c8c0; }
+
+    body { font-family: 'Courier Prime', monospace; background: var(--white); color: var(--black); min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+    }
+    .scanline {
+      position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+      background: rgba(0,0,0,0.07); animation: scan 10s linear infinite; pointer-events: none; z-index: 9999;
+    }
+    @keyframes scan { from { transform: translateY(-10px); } to { transform: translateY(100vh); } }
+
+    /* Topbar */
+    .topbar {
+      position: sticky; top: 0; z-index: 100; background: var(--black); color: var(--white);
+      border-bottom: 4px solid var(--black); display: flex; align-items: center;
+      padding: 0 32px; height: 60px; gap: 20px;
+    }
+    .topbar-logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 5px; flex: 1; }
+    .topbar-logo span { opacity: 0.35; font-weight: 400; }
+    #btn-logout {
+      padding: 8px 18px; background: transparent; color: var(--white);
+      border: 2px solid rgba(255,255,255,0.25); font-family: 'Courier Prime', monospace;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s;
+    }
+    #btn-logout:hover { background: var(--white); color: var(--black); border-color: var(--white); }
+
+    /* Layout */
+    .layout { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; position: relative; z-index: 1; animation: fadeUp 0.4s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); border: 4px solid var(--black); margin-bottom: 26px; }
+    .stat { padding: 20px 16px; text-align: center; border-right: 3px solid var(--black); }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+    .stat-label { font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); }
+
+    /* Add form */
+    .section { border: 4px solid var(--black); margin-bottom: 26px; }
+    .section-title {
+      background: var(--black); color: var(--white); padding: 11px 20px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
+    }
+    .add-body { padding: 22px; }
+    .add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .add-row-bottom { display: grid; grid-template-columns: 130px 170px 1fr; gap: 14px; align-items: end; }
+    .field-label { display: block; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; color: var(--gray); }
+
+    input[type="text"], input[type="date"], select {
+      width: 100%; padding: 10px 13px; border: 3px solid var(--black);
+      background: var(--white); font-family: 'Courier Prime', monospace;
+      font-size: 0.9rem; font-weight: 700; outline: none; transition: background 0.15s, color 0.15s;
+    }
+    input:focus, select:focus { background: var(--black); color: var(--white); }
+    input::placeholder { color: var(--light-gray); font-weight: 400; }
+    select option { background: var(--white); color: var(--black); }
+
+    .btn {
+      padding: 11px 20px; background: var(--black); color: var(--white);
+      border: 3px solid var(--black); font-family: 'Courier Prime', monospace;
+      font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s, color 0.2s; white-space: nowrap; width: 100%;
+    }
+    .btn:hover { background: var(--white); color: var(--black); }
+    .btn:active { transform: scale(0.985); }
+
+    /* Filters */
+    .filters-body { padding: 14px 20px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+    .filter-group-label { font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); margin-right: 6px; }
+    .filter-group { display: flex; }
+    .filter-btn {
+      padding: 7px 13px; background: var(--white); color: var(--gray);
+      border: 2px solid var(--light-gray); border-right: none;
+      font-family: 'Courier Prime', monospace; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+    }
+    .filter-btn:last-child { border-right: 2px solid var(--light-gray); }
+    .filter-btn:hover { border-color: var(--black); color: var(--black); }
+    .filter-btn.active { background: var(--black); color: var(--white); border-color: var(--black); }
+
+    /* Tasks */
+    .tasks-list { list-style: none; }
+    .task-item {
+      display: grid; grid-template-columns: 1fr auto;
+      border-bottom: 3px solid var(--black); transition: background 0.12s;
+      position: relative; animation: slideIn 0.22s ease both;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:translateX(0); } }
+    .task-item:last-child { border-bottom: none; }
+    .task-item:hover { background: #eeeee8; }
+    .task-item::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+    }
+    .task-item.priority-1::before { background: var(--light-gray); }
+    .task-item.priority-2::before { background: var(--gray); }
+    .task-item.priority-3::before { background: var(--black); }
+
+    .task-main { padding: 16px 18px 16px 22px; }
+    .task-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 9px; }
+    .badge {
+      display: inline-block; padding: 3px 7px;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border: 2px solid;
+    }
+    .status-todo { border-color: var(--light-gray); color: var(--gray); }
+    .status-in_progress { border-color: var(--gray); background: var(--gray); color: var(--white); }
+    .status-done { border-color: var(--black); background: var(--black); color: var(--white); }
+    .prio-1 { border-color: var(--light-gray); color: var(--light-gray); }
+    .prio-2 { border-color: var(--gray); color: var(--gray); }
+    .prio-3 { border-color: var(--black); color: var(--black); }
+    .badge-due { border-color: var(--light-gray); color: var(--gray); }
+
+    .task-title { font-size: 0.98rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+    .task-desc { margin-top: 4px; font-size: 0.78rem; color: var(--gray); }
+
+    .task-actions { display: flex; border-left: 3px solid var(--black); }
+    .task-btn {
+      padding: 0 17px; background: transparent; border: none;
+      border-left: 3px solid var(--black);
+      font-family: 'Courier Prime', monospace; font-size: 1.1rem; font-weight: 700;
+      cursor: pointer; color: var(--black); transition: background 0.15s, color 0.15s;
+    }
+    .task-btn:first-child { border-left: none; }
+    .task-btn:hover { background: var(--black); color: var(--white); }
+
+    .empty-state { padding: 60px 20px; text-align: center; font-size: 0.85rem; letter-spacing: 3px; text-transform: uppercase; color: var(--light-gray); }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 26px; right: 26px; z-index: 8000;
+      padding: 11px 20px; font-family: 'Courier Prime', monospace;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      border: 3px solid var(--black); transform: translateY(16px); opacity: 0;
+      transition: transform 0.28s, opacity 0.28s;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-ok { background: var(--black); color: var(--white); }
+    .toast-err { background: repeating-linear-gradient(45deg,var(--white) 0,var(--white) 8px,#e8e8e0 8px,#e8e8e0 16px); color: var(--black); }
+
+    /* Confirm */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 9000; background: rgba(10,10,10,0.6);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .confirm-box { background: var(--white); border: 4px solid var(--black); padding: 32px; min-width: 280px; text-align: center; }
+    .confirm-msg { font-size: 0.88rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 22px; }
+    .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+    .confirm-btns .btn { width: auto; min-width: 90px; }
+    .btn-outline { background: var(--white); color: var(--black); }
+    .btn-outline:hover { background: var(--black); color: var(--white); }
+
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+    .shake { animation: shake 0.33s ease; }
+    .loading-dots::after { content:'.'; animation: dots 1.2s steps(3,end) infinite; }
+    @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%,100%{content:'...'} }
+
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: repeat(2,1fr); }
+      .stat:nth-child(2){border-right:none;} .stat:nth-child(3),.stat:nth-child(4){border-top:3px solid var(--black);}
+      .add-row,.add-row-bottom { grid-template-columns: 1fr; }
+      .topbar { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<header class="topbar">
+  <div class="topbar-logo">TASK MANAGER <span>// МОИ ЗАДАЧИ</span></div>
+  <button id="btn-logout">ВЫХОД</button>
+</header>
+
+<main class="layout">
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">ВСЕГО</div></div>
+    <div class="stat"><div class="stat-num" id="stat-todo">0</div><div class="stat-label">TODO</div></div>
+    <div class="stat"><div class="stat-num" id="stat-inprog">0</div><div class="stat-label">В РАБОТЕ</div></div>
+    <div class="stat"><div class="stat-num" id="stat-done">0</div><div class="stat-label">ГОТОВО</div></div>
+  </div>
+
+  <!-- Add task -->
+  <div class="section">
+    <div class="section-title">// НОВАЯ ЗАДАЧА</div>
+    <div class="add-body">
+      <div class="add-row">
+        <div>
+          <label class="field-label" for="task-title">Название *</label>
+          <input id="task-title" type="text" placeholder="что нужно сделать...">
+        </div>
+        <div>
+          <label class="field-label" for="task-desc">Описание</label>
+          <input id="task-desc" type="text" placeholder="детали...">
+        </div>
+      </div>
+      <div class="add-row-bottom">
+        <div>
+          <label class="field-label" for="task-priority">Приоритет</label>
+          <select id="task-priority">
+            <option value="1">LOW</option>
+            <option value="2" selected>MEDIUM</option>
+            <option value="3">HIGH</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="task-due">Дедлайн</label>
+          <input id="task-due" type="date">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button id="btn-add" class="btn">+ ДОБАВИТЬ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="section">
+    <div class="section-title">// ФИЛЬТРЫ</div>
+    <div class="filters-body">
+      <div style="display:flex;align-items:center;">
+        <span class="filter-group-label">СТАТУС:</span>
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter-status="all">ВСЕ</button>
+          <button class="filter-btn" data-filter-status="todo">TODO</button>
+          <button class="filter-btn" data-filter-status="in_progress">В РАБОТЕ</button>
+          <button class="filter-btn" data-filter-status="done">ГОТОВО</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;">
+        <span class="filter-group-label">ПРИОРИТЕТ:</span>
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter-priority="0">ВСЕ</button>
+          <button class="filter-btn" data-filter-priority="1">LOW</button>
+          <button class="filter-btn" data-filter-priority="2">MED</button>
+          <button class="filter-btn" data-filter-priority="3">HIGH</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tasks -->
+  <div class="section">
+    <div class="section-title">// СПИСОК ЗАДАЧ</div>
+    <ul id="tasks-list" class="tasks-list">
+      <li class="empty-state">[ ЗАГРУЗКА... ]</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let token = localStorage.getItem('token') || '';
+let allTasks = [];
+let filterStatus = 'all';
+let filterPriority = 0;
+
+if (!token) { window.location.href = '/'; }
+
+// ── Utils ──
+function el(id) { return document.getElementById(id); }
+function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'}) : ''; }
+function authH() { return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }; }
+
+const STATUS_NEXT = { todo: 'in_progress', in_progress: 'done', done: 'todo' };
+const STATUS_LABEL = { todo: '[  ] TODO', in_progress: '[--] В РАБОТЕ', done: '[XX] ГОТОВО' };
+const PRIO_LABEL = { 1: 'LOW', 2: 'MED', 3: 'HIGH' };
+
+// ── Toast ──
+function toast(msg, isErr) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (isErr ? 'toast-err' : 'toast-ok');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 350); }, 2400);
+}
+
+// ── Confirm ──
+function confirm(msg) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'confirm-overlay';
+    ov.innerHTML = `<div class="confirm-box"><div class="confirm-msg">${msg}</div><div class="confirm-btns"><button class="btn" id="cy">ДА</button><button class="btn btn-outline" id="cn">НЕТ</button></div></div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#cy').onclick = () => { ov.remove(); resolve(true); };
+    ov.querySelector('#cn').onclick = () => { ov.remove(); resolve(false); };
+  });
+}
+
+// ── Stats ──
+function renderStats() {
+  el('stat-total').textContent = allTasks.length;
+  el('stat-todo').textContent = allTasks.filter(t => t.status === 'todo').length;
+  el('stat-inprog').textContent = allTasks.filter(t => t.status === 'in_progress').length;
+  el('stat-done').textContent = allTasks.filter(t => t.status === 'done').length;
+}
+
+// ── Render tasks ──
+function renderTasks() {
+  const filtered = allTasks.filter(t => {
+    const sOk = filterStatus === 'all' || t.status === filterStatus;
+    const pOk = filterPriority === 0 || t.priority === filterPriority;
+    return sOk && pOk;
+  });
+  const list = el('tasks-list');
+  if (!filtered.length) { list.innerHTML = '<li class="empty-state">[ ЗАДАЧ НЕТ ]</li>'; return; }
+  list.innerHTML = filtered.map(t => `
+    <li class="task-item priority-${t.priority}">
+      <div class="task-main">
+        <div class="task-badges">
+          <span class="badge ${t.status}">${STATUS_LABEL[t.status]}</span>
+          <span class="badge prio-${t.priority}">${PRIO_LABEL[t.priority]}</span>
+          ${t.due_date ? `<span class="badge badge-due">📅 ${fmtDate(t.due_date)}</span>` : ''}
+        </div>
+        <div class="task-title">${esc(t.title)}</div>
+        ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
+      </div>
+      <div class="task-actions">
+        <button class="task-btn" data-action="cycle" data-id="${t.id}" data-status="${t.status}" title="Следующий статус">◯</button>
+        <button class="task-btn" data-action="delete" data-id="${t.id}" title="Удалить">✕</button>
+      </div>
+    </li>`).join('');
+
+  list.querySelectorAll('.task-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.id);
+      if (btn.dataset.action === 'cycle') cycleStatus(id, btn.dataset.status);
+      else deleteTask(id);
+    });
+  });
+}
+
+// ── API calls ──
+async function loadTasks() {
+  try {
+    const res = await fetch(API + '/tasks', { headers: authH() });
+    if (res.status === 401) { logout(); return; }
+    if (res.ok) { allTasks = await res.json(); renderStats(); renderTasks(); }
+  } catch { toast('ОШИБКА ЗАГРУЗКИ', true); }
+}
+
+async function createTask() {
+  const titleEl = el('task-title');
+  const title = titleEl.value.trim();
+  if (!title) { titleEl.classList.add('shake'); setTimeout(() => titleEl.classList.remove('shake'), 400); return; }
+  const payload = {
+    title,
+    priority: parseInt(el('task-priority').value),
+    description: el('task-desc').value.trim() || undefined,
+    due_date: el('task-due').value ? new Date(el('task-due').value).toISOString() : undefined
+  };
+  try {
+    const res = await fetch(API + '/tasks', { method: 'POST', headers: authH(), body: JSON.stringify(payload) });
+    if (res.ok) {
+      titleEl.value = ''; el('task-desc').value = ''; el('task-due').value = '';
+      toast('ЗАДАЧА ДОБАВЛЕНА');
+      await loadTasks();
+    } else { toast('ОШИБКА СОЗДАНИЯ', true); }
+  } catch { toast('ОШИБКА СЕТИ', true); }
+}
+
+async function cycleStatus(id, current) {
+  try {
+    const res = await fetch(`${API}/tasks/${id}`, {
+      method: 'PUT', headers: authH(),
+      body: JSON.stringify({ status: STATUS_NEXT[current] })
+    });
+    if (res.ok) await loadTasks();
+  } catch { toast('ОШИБКА ОБНОВЛЕНИЯ', true); }
+}
+
+async function deleteTask(id) {
+  const ok = await confirm('УДАЛИТЬ ЗАДАЧУ?');
+  if (!ok) return;
+  try {
+    const res = await fetch(`${API}/tasks/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.ok) { toast('ЗАДАЧА УДАЛЕНА'); await loadTasks(); }
+  } catch { toast('ОШИБКА УДАЛЕНИЯ', true); }
+}
+
+function logout() { localStorage.removeItem('token'); window.location.href = '/'; }
+
+// ── Filters ──
+document.querySelectorAll('[data-filter-status]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterStatus = btn.dataset.filterStatus;
+    document.querySelectorAll('[data-filter-status]').forEach(b => b.classList.toggle('active', b === btn));
+    renderTasks();
+  });
+});
+document.querySelectorAll('[data-filter-priority]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterPriority = parseInt(btn.dataset.filterPriority);
+    document.querySelectorAll('[data-filter-priority]').forEach(b => b.classList.toggle('active', b === btn));
+    renderTasks();
+  });
+});
+
+// ── Init ──
+el('btn-add').addEventListener('click', createTask);
+el('btn-logout').addEventListener('click', logout);
+el('task-title').addEventListener('keypress', e => { if (e.key === 'Enter') createTask(); });
+loadTasks();
+</script>
+</body>
+</html>
