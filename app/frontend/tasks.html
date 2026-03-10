@@ -410,7 +410,6 @@ document.querySelectorAll('[data-filter-priority]').forEach(btn => {
   });
 });
 
-// ── Init ──
 el('btn-add').addEventListener('click', createTask);
 el('btn-logout').addEventListener('click', logout);
 el('task-title').addEventListener('keypress', e => { if (e.key === 'Enter') createTask(); });
